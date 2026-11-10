@@ -1,0 +1,61 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 24G
+
+  llm-judge:
+    build:
+      context: .
+      dockerfile: Dockerfile.llm-judge
+    container_name: aag-llm-judge
+    ports:
+      - "8003:8003"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MODEL=llama3:latest
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  deception-orchestrator:
+    build:
+      context: ./deception-orchestrator
+      dockerfile: Dockerfile
+    container_name: aag-deception-orchestrator
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=info
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: aag-vector
+    ports:
+      - "8686:8686"
+      - "9001:9001"
+    volumes:
+      - ./infra/vector:/etc/vector:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  ollama_data:

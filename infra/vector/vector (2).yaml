@@ -1,0 +1,67 @@
+# Vector configuration for AAG PoC log aggregation
+data_dir: /var/lib/vector
+
+sources:
+  docker_logs:
+    type: docker_logs
+    include_containers:
+      - aag-behavioral-engine
+      - aag-deception-orchestrator
+      - aag-agent-profiler
+      - aag-llm-judge
+      - aag-clickhouse
+      - aag-postgres
+      - aag-kafka
+      - aag-ollama
+      - aag-k3s
+      - aag-dashboard
+      - aag-grafana
+      - aag-redis
+    include_labels:
+      - "com.docker.compose.project=aag-poc"
+
+  kubernetes_logs:
+    type: kubernetes_logs
+    # Requires K3s to be running with proper RBAC
+
+transforms:
+  parse_json:
+    type: remap
+    inputs:
+      - docker_logs
+    source: |
+      .message = parse_json!(.message, fallback: .message)
+      .timestamp = parse_timestamp!(.timestamp, format: "rfc3339", fallback: now())
+
+  enrich:
+    type: remap
+    inputs:
+      - parse_json
+    source: |
+      .service = .container_name
+      .project = .container_labels."com.docker.compose.project"
+      .version = .container_labels."com.docker.compose.version"
+
+sinks:
+  clickhouse:
+    type: clickhouse
+    inputs:
+      - enrich
+    database: aag
+    table: events
+    endpoint: http://clickhouse:8123
+    auth:
+      strategy: basic
+      user: aag
+      password: aag
+    batch:
+      max_size: 1000
+      timeout_secs: 5
+
+  console:
+    type: console
+    inputs:
+      - enrich
+    target: stdout
+    encoding:
+      codec: json

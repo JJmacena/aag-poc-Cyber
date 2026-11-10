@@ -1,0 +1,216 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.45},
+              {"color": "orange", "value": 0.65},
+              {"color": "red", "value": 0.8}
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "time_series",
+          "query": "SELECT toStartOfInterval(created_at, INTERVAL 1 MINUTE) as t, avg(final_score) * 100 as value FROM aag.sessions WHERE created_at > now() - INTERVAL 1 HOUR GROUP BY t ORDER BY t",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Threat Score (1h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 80, "groupWidth": 0.7, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "time_series",
+          "query": "SELECT toStartOfInterval(created_at, INTERVAL 5 MINUTE) as t, threat_tier, count() as value FROM aag.sessions WHERE created_at > now() - INTERVAL 1 HOUR GROUP BY t, threat_tier ORDER BY t",
+          "refId": "A"
+        }
+      ],
+      "title": "Threat Tier Distribution (1h)",
+      "type": "barchart"
+    },
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"BENIGN": {"color": "green", "index": 0}}, "type": "value"},
+            {"options": {"TIER-3": {"color": "yellow", "index": 1}}, "type": "value"},
+            {"options": {"TIER-2": {"color": "orange", "index": 2}}, "type": "value"},
+            {"options": {"TIER-1": {"color": "red", "index": 3}}, "type": "value"}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"showHeader": true},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "table",
+          "query": "SELECT session_id, src_ip, decoy_persona, final_score, threat_tier, if_score, transformer_score, llm_score, created_at FROM aag.sessions ORDER BY created_at DESC LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Sessions",
+      "type": "table"
+    },
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "groupWidth": 0.7, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "auto", "spanNulls": true},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "if_score"}, "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "transformer_score"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "llm_score"}, "properties": [{"id": "color", "value": {"fixedColor": "purple", "mode": "fixed"}}]
+        ]
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 4,
+      "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "time_series",
+          "query": "SELECT toStartOfInterval(created_at, INTERVAL 1 MINUTE) as t, avg(if_score) as if_score, avg(transformer_score) as transformer_score, avg(llm_score) as llm_score FROM aag.sessions WHERE created_at > now() - INTERVAL 1 HOUR GROUP BY t ORDER BY t",
+          "refId": "A"
+        }
+      ],
+      "title": "Layer Scores Over Time (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 80, "groupWidth": 0.7, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 5,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "time_series",
+          "query": "SELECT toStartOfInterval(created_at, INTERVAL 5 MINUTE) as t, action, count() as value FROM aag.deception_actions WHERE created_at > now() - INTERVAL 1 HOUR GROUP BY t, action ORDER BY t",
+          "refId": "A"
+        }
+      ],
+      "title": "Deception Actions (1h)",
+      "type": "barchart"
+    },
+    {
+      "datasource": "ClickHouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "groupWidth": 0.7, "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "auto", "spanNulls": true},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "id": 6,
+      "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": "ClickHouse",
+          "format": "time_series",
+          "query": "SELECT toStartOfInterval(created_at, INTERVAL 1 MINUTE) as t, count() as total_sessions FROM aag.sessions WHERE created_at > now() - INTERVAL 1 HOUR GROUP BY t ORDER BY t",
+          "refId": "A"
+        }
+      ],
+      "title": "Session Volume (1h)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["aag", "poc", "security"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "AAG PoC - Overview",
+  "uid": "aag-overview",
+  "version": 1,
+  "weekStart": ""
+}

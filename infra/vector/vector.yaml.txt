@@ -1,0 +1,13 @@
+data_dir: /var/lib/vector
+
+sources:
+  docker_logs:
+    type: docker
+    include_containers: [aag-ollama, aag-llm-judge]
+
+sinks:
+  console:
+    type: console
+    inputs: [docker_logs]
+    encoding:
+      codec: json
